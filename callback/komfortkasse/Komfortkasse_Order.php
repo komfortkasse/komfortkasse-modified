@@ -92,6 +92,7 @@ class Komfortkasse_Order
         $lang = $lang_a ['code'];
         
         $ret = array ();
+        $ret ['invoice_date'] = null;
         $ret ['number'] = $number;
         $ret ['date'] = date("d.m.Y", strtotime($order->info ['date_purchased']));
         $ret ['email'] = $order->customer ['email_address'];
@@ -116,6 +117,12 @@ class Komfortkasse_Order
         $ret ['billing_city'] = $order->billing ['city'];
         $ret ['billing_countrycode'] = $order->billing ['country_iso_2'];
         
+
+        $current = file_get_contents($file);
+        // Fügt eine neue Person zur Datei hinzu
+        $current .= $number.'/'.$ret ['invoice_date'];
+        // Schreibt den Inhalt in die Datei zurück
+        file_put_contents($file, $current);
         $order_products = $order->products;
         foreach ($order_products as $product) {
             if ($product ['model']) {

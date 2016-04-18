@@ -28,8 +28,9 @@ Note: if the installer exits before step <?php echo $steps; ?> without an error 
 Including files...
 
 <?php
-require_once ('../../includes/configure.php');
-require_once ('../../includes/application_top_callback.php');
+$basepath = explode('callback', $_SERVER['SCRIPT_FILENAME']) ;
+require_once ($basepath[0].'includes/configure.php');
+require_once (DIR_WS_INCLUDES.'application_top_callback.php');
 require_once ('Komfortkasse_Config.php');
 ?>
 
@@ -219,7 +220,7 @@ if ($ok) {
 <br />
 	<br />
 	<b><?php echo ++$step;?>/<?php echo $steps;?></b> Finished. <a
-		href="<?php echo HTTP_SERVER?>/admin/configuration.php?gID=<?php echo $config_group_id; ?>"
+		href="<?php echo (ENABLE_SSL ? HTTPS_SERVER : HTTP_SERVER).DIR_WS_CATALOG?>admin/configuration.php?gID=<?php echo $config_group_id; ?>"
 		target="_new">Please check the configuration now.</a><br /> (If you
 		cannot access this link, please login to your admin panel and open the
 		Komfortkasse configuration from the menu - should be the last menu
@@ -274,7 +275,7 @@ define('MODULE_PAYMENT_EUTRANSFER_TEXT_DESCRIPTION', '&lt;br /&gt;After your ord
 
 function insert_configuration($config_group_id, $config_key, $config_value, $use_function, $set_function, $sort_order)
 {
-    // prüfen ob wert besteht -> wenn ja, update, sonst insert
+    // prï¿½fen ob wert besteht -> wenn ja, update, sonst insert
     $where = "configuration_group_id=" . $config_group_id . " and configuration_key='" . $config_key . "'";
     $check_s = xtc_db_query("SELECT * FROM " . TABLE_CONFIGURATION . " where " . $where);
     $check_a = xtc_db_fetch_array($check_s);
