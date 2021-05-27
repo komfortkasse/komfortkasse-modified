@@ -1,22 +1,22 @@
 <?php
 
-/** 
+/**
  * Komfortkasse Order Class
  * in KK, an Order is an Array providing the following members:
  * number, date, email, customer_number, payment_method, amount, currency_code, exchange_rate, language_code
  * status: data type according to the shop system
  * delivery_ and billing_: _firstname, _lastname, _company, _street, _postcode, _city, _countrycode
  * products: an Array of item numbers
- * @version 1.4.3-xtc3
+ * @version 1.4.5.1-xtc3
  */
 class Komfortkasse_Order
 {
-    
+
     // return all order numbers that are "open" and relevant for transfer to kk
     public static function getOpenIDs()
     {
         $ret = array ();
-        
+
         if (Komfortkasse_Config::getConfig(Komfortkasse_Config::status_open) != '' && Komfortkasse_Config::getConfig(Komfortkasse_Config::payment_methods) != '') {
             $sql = "select orders_id from " . TABLE_ORDERS . " where orders_status in (" . Komfortkasse_Config::getConfig(Komfortkasse_Config::status_open) . ") and ( ";
             $paycodes = preg_split('/,/', Komfortkasse_Config::getConfig(Komfortkasse_Config::payment_methods));
@@ -28,7 +28,7 @@ class Komfortkasse_Order
             }
             $sql .= " )";
             $orders_q = xtc_db_query($sql);
-            
+
             while ( $orders_a = xtc_db_fetch_array($orders_q) ) {
                 $ret [] = $orders_a ['orders_id'];
             }
@@ -45,12 +45,12 @@ class Komfortkasse_Order
             }
             $sql .= " )";
             $orders_q = xtc_db_query($sql);
-        
+
             while ( $orders_a = xtc_db_fetch_array($orders_q) ) {
                 $ret [] = $orders_a ['orders_id'];
             }
         }
-        
+
         if (Komfortkasse_Config::getConfig(Komfortkasse_Config::status_open_cod) != '' && Komfortkasse_Config::getConfig(Komfortkasse_Config::payment_methods_cod) != '') {
             $sql = "select orders_id from " . TABLE_ORDERS . " where orders_status in (" . Komfortkasse_Config::getConfig(Komfortkasse_Config::status_open_cod) . ") and ( ";
             $paycodes = preg_split('/,/', Komfortkasse_Config::getConfig(Komfortkasse_Config::payment_methods_cod));
@@ -62,35 +62,39 @@ class Komfortkasse_Order
             }
             $sql .= " )";
             $orders_q = xtc_db_query($sql);
-        
+
             while ( $orders_a = xtc_db_fetch_array($orders_q) ) {
                 $ret [] = $orders_a ['orders_id'];
             }
         }
-        
-        
+
+
         return $ret;
-    
+
     }
 
 
     public static function getOrder($number)
     {
         require_once DIR_WS_CLASSES . 'order.php';
-        
+        $extfile1 = DIR_WS_INCLUDES . '/rpa-com/rpa_custom_inputs.class.php';
+        if (file_exists($extfile1))
+            require_once $extfile1;
+
         $order = new order($number);
+
         if (empty($number) || empty($order)) {
             return null;
         }
-        
+
         $total_q = xtc_db_query("SELECT value FROM " . TABLE_ORDERS_TOTAL . " where orders_id=" . $number . " and class='ot_total'");
         $total_a = xtc_db_fetch_array($total_q);
         $total = $total_a ['value'];
-        
+
         $lang_q = xtc_db_query("SELECT l.code FROM " . TABLE_ORDERS . " o join " . TABLE_LANGUAGES . " l on l.directory=o.language where o.orders_id=" . $number);
         $lang_a = xtc_db_fetch_array($lang_q);
         $lang = $lang_a ['code'];
-        
+
         $ret = array ();
         $ret ['invoice_date'] = null;
         $ret ['number'] = $number;
@@ -101,6 +105,8 @@ class Komfortkasse_Order
         $ret ['amount'] = $total;
         $ret ['currency_code'] = $order->info ['currency'];
         $ret ['exchange_rate'] = $order->info ['currency_value'];
+        $ret ['status_name'] = $order->info ['orders_status'];
+        $ret ['status'] = $order->info ['orders_status_id'];
         $ret ['language_code'] = $lang . '-' . $order->billing ['country_iso_2'];
         $ret ['delivery_firstname'] = $order->delivery ['firstname'];
         $ret ['delivery_lastname'] = $order->delivery ['lastname'];
@@ -116,13 +122,7 @@ class Komfortkasse_Order
         $ret ['billing_postcode'] = $order->billing ['postcode'];
         $ret ['billing_city'] = $order->billing ['city'];
         $ret ['billing_countrycode'] = $order->billing ['country_iso_2'];
-        
 
-        $current = file_get_contents($file);
-        // Fügt eine neue Person zur Datei hinzu
-        $current .= $number.'/'.$ret ['invoice_date'];
-        // Schreibt den Inhalt in die Datei zurück
-        file_put_contents($file, $current);
         $order_products = $order->products;
         foreach ($order_products as $product) {
             if ($product ['model']) {
@@ -131,9 +131,9 @@ class Komfortkasse_Order
                 $ret ['products'] [] = $product ['name'];
             }
         }
-        
+
         return $ret;
-    
+
     }
 
 
@@ -141,7 +141,7 @@ class Komfortkasse_Order
     {
         xtc_db_query("update " . TABLE_ORDERS . " set orders_status = '" . xtc_db_input($status) . "', last_modified = now() where orders_id = '" . xtc_db_input($order ['number']) . "'");
         xtc_db_query("insert into " . TABLE_ORDERS_STATUS_HISTORY . " (orders_id, orders_status_id, date_added, customer_notified, comments) values ('" . xtc_db_input($order ['number']) . "', '" . xtc_db_input($status) . "', now(), '0', 'Komfortkasse ID " . $callbackid . "')");
-    
+
     }
 }
 

@@ -8,7 +8,7 @@ require_once 'Komfortkasse_Order.php';
  */
 class Komfortkasse
 {
-    const PLUGIN_VER = '1.4.4.14';
+    const PLUGIN_VER = '1.4.5.1';
     const MAXLEN_SSL = 117;
     const LEN_MCRYPT = 16;
 
@@ -860,5 +860,21 @@ class Komfortkasse
 
         return Komfortkasse_Order::getInvoicePdf($invoiceNumber, $orderNumber);
 
+    }
+
+    public static function readconfig() {
+        $key = Komfortkasse_Config::getRequestParameter('confkey');
+        if (strpos($key, 'ACCESSCODE') !== false)
+            return null;
+        if (strpos($key, 'KEY') !== false)
+            return null;
+
+        $storeid = Komfortkasse_Config::getRequestParameter('storeid');
+
+        $order = null;
+        if ($storeid)
+            $order['store_id'] = $storeid;
+
+        Komfortkasse::output(Komfortkasse_Config::getConfig($key, $order));
     }
 }
